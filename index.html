@@ -97,7 +97,7 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
         }
 
         getPossibleMoves(stack) {
-            const gajieni = [];
+            const moves = [];
             for (let i = 0; i < stack.length; i++) {
                 const numurs = stack[i];
 
@@ -107,12 +107,12 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
                         const l = stack.slice(0, i).concat([j]); //kreisais skaitlis sadalot kaudzi
                         const r = stack.slice(i + 1).concat([numurs - j]); //labais skaitlis sadalot kaudzi
                         if(j !== numurs - j){
-                            gajieni.push([l, r]);
+                            moves.push([l, r]);
                         }
                     }
                 }
             }
-            return gajieni;
+            return moves;
         }
 
         //Minimax ar alfa beta
