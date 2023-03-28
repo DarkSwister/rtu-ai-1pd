@@ -123,6 +123,7 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
         // a maksimizējošais spēlētājs ir uzvarējis. Ja kaudzes garums ir nepāra, rezultāts ir -1,
         // kas norāda, ka ir uzvarējis minimizējošais spēlētājs.
         minimax(stack, depth, alpha, beta, maximizingPlayer) {
+            console.log(stack);
             const moves = this.getPossibleMoves(stack); //nosakam visus iespejamos gajienus
             if (depth === 0 || moves.length === 0) {
                 return stack.length % 2 === 0 ? 1 : -1;
@@ -144,7 +145,10 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
                 let bestScore = Infinity;
                 for (let i = 0; i < moves.length; i++) {
                     const [stack1, stack2] = moves[i];
-                    const newStack = [...stack.filter((_, index) => index !== i), stack1, stack2];
+                    //Šajā koda daļā tiek izveidota jauna masīva newStack vērtība, kura ir veidota, izmantojot ES6 spread operatoru un filter metodi.
+                    // Šīs metodes izmantošanas rezultātā newStack saturēs visus elementus no sākotnējā stack masīva, izņemot elementu ar indeksu i.
+                    // Tajā vietā, kur atradās elements ar indeksu i, newStack saturēs divas citas vērtības - stack1 un stack2.
+                    const newStack = [...stack.filter((_, index) => index !== i), stack1, stack2]; //
                     const score = this.minimax(newStack, depth - 1, alpha, beta, true);
                     bestScore = Math.min(bestScore, score);
                     beta = Math.min(beta, score);
