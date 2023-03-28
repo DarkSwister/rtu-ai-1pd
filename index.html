@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>201RDB083</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="
+https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js
+"></script>
+    <link href="
+https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
+" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.4.js"
+            integrity="sha256-a9jBBRygX1Bh5lt8GZjXDzyOB+bWve9EiO7tROUtj/E=" crossorigin="anonymous"></script>
+    <style>
+        .board-container {
+            box-sizing: border-box
+        }
+
+        #game {
+            background-color: white;
+            height: 100%;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .item {
+            width: 30px;
+            height: 30px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container-fluid text-center mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card bg-dark text-center my-5 px-2 py-2">
+                <div class="row pt-3 mb-2">
+                    <div class="col-12 ">
+                        <h2 class="text-white">Nim Game</h2>
+                        <div class="form-group">
+                            <label class="text-white" for="stackInput">Sakotnejais skaitlis</label>
+                            <input type="number" class="form-control" id="stackInput" value="7">
+                        </div>
+                        <span class="text-info">Sadaliet kaudzi divās nevienmērīgās daļās
+                            (ja ir vairākas kaudzes, sadaliet tikai vienu no viņām).</span>
+                    </div>
+
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="container-fluid">
+                            <div class="row board-container">
+                                <div id="game"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!--         Buttons -->
+                <div class="row justify-content-center mt-4 mb-2">
+                    <div class="col-4 justify-content-center btn-group ">
+                        <button class="btn-sm btn-success mr-2" id="move">Move</button>
+                        <button class="btn-sm btn-warning mr-2" id="reset">Reset</button>
+                        <button class="btn-sm btn-primary mr-2" id="player">Player</button>
+                        <button class="btn-sm btn-secondary" id="ai">AI</button>
+                    </div>
+
+                </div>
+                <div class="row">
+                    <div class="col-12 ">
+                        <div id="terminal" class="text-left border"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+    let term = new Terminal();
+    term.open(document.getElementById('terminal'));
+
+    //termināls priekš informatīvas izvades
+
+    class Nim {
+        constructor(currentPlayer,startNumber) {
+            this.stack = [startNumber];
+            this.stackTrace = [{"Start": [7]}];
+            this.currentPlayer = currentPlayer;
+        }
+
+        getPossibleMoves(stack) {
+            const gajieni = [];
+            for (let i = 0; i < stack.length; i++) {
+                const numurs = stack[i];
+
+                if (numurs > 2) {
+                    // sadalam divos nevienmerigos stackos un samazinam iteraciju skaitu 2x reizes lai nebutu 2-5 un 5-2, bet tikai 2-5
+                    for (let j = 1; j < numurs/2; j++) {
+                        const l = stack.slice(0, i).concat([j]); //kreisais skaitlis sadalot kaudzi
+                        const r = stack.slice(i + 1).concat([numurs - j]); //labais skaitlis sadalot kaudzi
+                        if(j !== numurs - j){
+                            gajieni.push([l, r]);
+                        }
+                    }
+                }
+            }
+            return gajieni;
+        }
+
+        //Minimax ar alfa beta
+        //Šī funkcija vispirms iegūst visus iespējamos gājienus,
+        // ko var izdarīt no pašreizējā spēles stāvokļa, izsaucot getPossibleMoves metodi.
+        // Ja ir sasniegts dziļuma ierobežojums vai ja vairs nav iespējamu gājienu, funkcija atgriež rezultātu,
+        // kas atspoguļo pašreizējās kaudzes vērtību. Ja kaudzes garums ir pāra, rezultāts ir 1, kas norāda, k
+        // a maksimizējošais spēlētājs ir uzvarējis. Ja kaudzes garums ir nepāra, rezultāts ir -1,
+        // kas norāda, ka ir uzvarējis minimizējošais spēlētājs.
+        minimax(stack, depth, alpha, beta, maximizingPlayer) {
+            const moves = this.getPossibleMoves(stack); //nosakam visus iespejamos gajienus
+            if (depth === 0 || moves.length === 0) {
+                return stack.length % 2 === 0 ? 1 : -1;
+            }
+            if (maximizingPlayer) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < moves.length; i++) {
+                    const [stack1, stack2] = moves[i];
+                    const newStack = [...stack.filter((_, index) => index !== i), stack1, stack2];
+                    const score = this.minimax(newStack, depth - 1, alpha, beta, false);
+                    bestScore = Math.max(bestScore, score);
+                    alpha = Math.max(alpha, score);
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < moves.length; i++) {
+                    const [stack1, stack2] = moves[i];
+                    const newStack = [...stack.filter((_, index) => index !== i), stack1, stack2];
+                    const score = this.minimax(newStack, depth - 1, alpha, beta, true);
+                    bestScore = Math.min(bestScore, score);
+                    beta = Math.min(beta, score);
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+
+                return bestScore;
+            }
+        }
+
+
+        isValidMove(stackIndex, size) {
+            //ja nepareizi izveleta kaudze vai kaudzes indekss lielaks neka kopejais kaudzu garums
+            if (stackIndex < 0 || stackIndex >= this.stack.length) {
+                return false;
+            }
+            //sanemam kaudzes izmeru
+            const stackSize = this.stack[stackIndex];
+            //ja panemta puse no kaudzes, jo janem nevienmerigas dalas
+            if ((stackSize - size) * 2 == stackSize) {
+                return false;
+            }
+            //parbaudam vai panemamais daudzums lielaks par 0 un mazaks neka aktualais kaudzes izmers
+            return size > 0 && size < stackSize;
+        }
+
+        //ja katras kaudzes izmers mazaks par 3
+        isGameOver() {
+            return this.stack.every((size) => size < 3);
+        }
+
+        getWinner() {
+            if (!this.isGameOver()) {
+                return null;
+            }
+            //oponents vinne
+            return this.currentPlayer === 1 ? 'AI' : 'Lietotājs';
+        }
+
+        getAIMove() {
+            const moves = this.getPossibleMoves(this.stack);
+            if (moves.length === 0) {
+                return null;
+            }
+            let bestScore = -Infinity;
+            let bestMove = null;
+            let bestMoves = [];
+            for (let i = 0; i < moves.length; i++) {
+                const [stack1, stack2] = moves[i];
+                const newStack = [...this.stack.filter((_, index) => index !== i), stack1, stack2];
+                const score = this.minimax(newStack,3 , -Infinity, Infinity,false);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = moves[i];
+                    bestMoves.push(bestMove,score);
+                }
+            }
+            return bestMove;
+        }
+
+        // Applies the given move to the game state
+        applyMove(stackIndex, stackSize) {
+            const currentStack = this.stack[stackIndex];
+            const newStackSizes = [stackSize, currentStack - stackSize];
+            this.stack.splice(stackIndex, 1, ...newStackSizes);
+            let player = this.currentPlayer == 1 ? 'Lietotājs' : "Ai";
+            let trace = {[player]: this.stack};
+            this.stackTrace.push(trace); //logošana
+            this.currentPlayer = this.currentPlayer == 1 ? 2 : 1;
+        }
+
+        applyAiMove(move) {
+            this.stack = [...move[0], ...move[1]];
+            let player = this.currentPlayer == 2 ? 'Ai' : "Lietotājs";
+            let trace = {[player]: [...this.stack]};
+            this.stackTrace.push(trace); //logošana
+            this.currentPlayer = this.currentPlayer == 1 ? 2 : 1;
+        }
+
+        drawMoveTrace() {
+            return JSON.stringify(this.stackTrace);
+        }
+
+    }
+
+    class Game {
+        constructor(player,number = 7) {
+            this.number = number;
+            this.player = player;
+            this.board = $('#game')
+            this.aiButton = $('#ai')
+            this.playerButton = $('#player')
+            this.game = undefined;
+            this.stackIndex = undefined;
+            this.size = undefined;
+        }
+
+        play() {
+            this.highlightButton();
+            this.game = new Nim(this.player,this.number);
+            this.drawGame();
+            if (this.player === 2) {
+                this.aiMove();
+            }
+        }
+
+        //Tekoša spēlētāja poga zilā krāsā
+        highlightButton() {
+            if (this.player === 1) {
+                this.aiButton.attr('class', 'btn-sm btn-secondary');
+                this.playerButton.attr('class', 'btn-sm btn-primary mr-2');
+            } else {
+                this.aiButton.attr('class', 'btn-sm btn-primary');
+                this.playerButton.attr('class', 'btn-sm btn-secondary mr-2');
+            }
+
+        }
+
+        drawGame() {
+            this.board.empty(); //attīram lauku
+            for (let i = 0; i < this.game.stack.length; i++) {
+
+                const heap = document.createElement('div'); // izveido DIV
+                heap.classList.add(`heap-${i}`);  // ieraksta klases
+                $(heap).data("value", i);
+                this.board.append(heap); // pievieno HTML klases iekš DIV.
+                for (let j = 0; j < this.game.stack[i]; j++) {
+                    let element = document.createElement('input'); //tiek izveidots bloks
+                    element.setAttribute("type", "checkbox");
+                    element.className = "item"; //blokā tiek ierakstīta klase
+                    element.setAttribute("disabled", true);
+                    if (this.game.stack[i] > 2) { //ja kaudzes izmers lielaks par 2, padaram boxus aktīvus
+                        element.removeAttribute("disabled");
+                    }
+                    if(j > this.game.stack[i]/2){ //padaram pusi no elementiem neaktīvus
+                        element.setAttribute("disabled", true);
+                    }
+
+
+                    element.onclick = () => this.restrictHeaps(element); //uzspiežot uz kaudzes, padaram pārējās kaudzes disabled
+                    heap.append(element);
+                }
+            }
+
+        }
+
+        //Parāda kurš uzvar
+        drawWinner() {
+            this.board.empty();
+            this.board.append(`${this.game.getWinner()} uzvar!\r\n`)
+            term.write(`${this.game.getWinner()} uzvar!\r\n`);
+            term.write(`${this.game.drawMoveTrace()}!\r\n`);
+        }
+
+        restrictHeaps(el) {
+            this.stackIndex = $(el).parent().data('value');
+            this.size = $(`.heap-${this.stackIndex} input:checkbox:checked`).length;
+            for (let i = 0; i < this.game.stack.length; i++) {
+                if (this.stackIndex !== i) {
+                    $(`.heap-${i} input[type=checkbox]`)
+                        .attr('disabled', true);
+                }
+            }
+
+            //parraksta spēles laukumu ja gribam izvēleties citu kaudzi
+            if (this.size === 0) {
+                this.drawGame();
+            }
+        }
+
+        playerMove() {
+            if (this.game.isGameOver()) {
+                this.drawWinner();
+            }
+            if (this.game.isValidMove(...[this.stackIndex, this.size])) {
+                this.game.applyMove(...[this.stackIndex, this.size]);
+                term.write(`Lietotāja gājiens. Kaudzes indeks: ${this.stackIndex}. Noņemamais Izmērs: ${this.size}. Kaudzes dati: ${this.game.stack}\n\r`);
+
+                this.drawGame(); //parzimejam speli
+                this.switchPlayer(); //pamainam speletaju uz pretejo
+                return this.aiMove(); //uztaisam AI gajienu
+            } else {
+                term.write('Neatbalstīts gājiens: izmēram nedrīkst būt 0, vai kaudzi jādala nevienmērīgi.\n\r');
+            }
+        }
+
+        switchPlayer() {
+            this.player = this.player == 1 ? 2 : 1;
+        }
+
+        aiMove() {
+            if (this.game.isGameOver()) {
+                return this.drawWinner();
+            }
+            let move = this.game.getAIMove();
+            this.game.applyAiMove(move);
+            term.write(`AI gājiens. Kaudzes Dati: ${move}\n\r`);
+            if (this.game.isGameOver()) {
+                return this.drawWinner();
+            }
+            this.drawGame();
+            this.switchPlayer();
+        }
+    }
+
+
+    $(function () {
+        let game = new Game(1);
+        game.play();
+        term.write('Spēle sākusies. Tekošs spēlētājs: Lietotājs\n\r');
+
+        $("#player").on("click", function () {
+            game = new Game(1,$( "#stackInput" ).val());
+            term.write('Jaunā spēle uzsācās: Tekošs spēlētājs: Lietotājs\n\r');
+            game.play();
+        });
+
+        $("#ai").on("click", function () {
+            game = new Game(2,$( "#stackInput" ).val());
+            term.write('Jaunā spēle uzsācās: Tekošs spēlētājs: AI\n\r');
+            game.play();
+        });
+
+        $("#reset").on("click", function () {
+            if ($("#ai").hasClass("btn-primary")) {
+                game = new Game(2,$( "#stackInput" ).val());
+            } else {
+                game = new Game(1,$( "#stackInput" ).val());
+            }
+            term.write('Game Reset\n\r');
+            game.play();
+        });
+
+        $("#move").on("click", function () {
+            if (game.player == 1) {
+                game.playerMove();
+            }
+        });
+
+        $( "#stackInput" ).change(function() {
+            let value = $(this).val();
+            if ($("#ai").hasClass("btn-primary")) {
+                game = new Game(2,value);
+                game.play();
+            } else {
+                game = new Game(1,value);
+                game.play();
+            }
+        });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"
+        integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V"
+        crossorigin="anonymous"></script>
+</body>
+</html>
