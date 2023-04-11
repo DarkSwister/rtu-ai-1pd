@@ -99,14 +99,14 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
         getPossibleMoves(stack) {
             const moves = [];
             for (let i = 0; i < stack.length; i++) {
-                const numurs = stack[i];
+                const num = stack[i];
 
-                if (numurs > 2) {
+                if (num > 2) {
                     // sadalam divos nevienmerigos stackos un samazinam iteraciju skaitu 2x reizes lai nebutu 2-5 un 5-2, bet tikai 2-5
-                    for (let j = 1; j < numurs/2; j++) {
+                    for (let j = 1; j < num/2; j++) {
                         const l = stack.slice(0, i).concat([j]); //kreisais skaitlis sadalot kaudzi
-                        const r = stack.slice(i + 1).concat([numurs - j]); //labais skaitlis sadalot kaudzi
-                        if(j !== numurs - j){
+                        const r = stack.slice(i + 1).concat([num - j]); //labais skaitlis sadalot kaudzi
+                        if(j !== num - j){
                             moves.push([l, r]);
                         }
                     }
@@ -123,7 +123,6 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
         // a maksimizējošais spēlētājs ir uzvarējis. Ja kaudzes garums ir nepāra, rezultāts ir -1,
         // kas norāda, ka ir uzvarējis minimizējošais spēlētājs.
         minimax(stack, depth, alpha, beta, maximizingPlayer) {
-            console.log(stack);
             const moves = this.getPossibleMoves(stack); //nosakam visus iespejamos gajienus
             if (depth === 0 || moves.length === 0) {
                 return stack.length % 2 === 0 ? 1 : -1;
@@ -131,9 +130,9 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
             if (maximizingPlayer) {
                 let bestScore = -Infinity;
                 for (let i = 0; i < moves.length; i++) {
-                    const [stack1, stack2] = moves[i];
-                    const newStack = [...stack.filter((_, index) => index !== i), stack1, stack2];
-                    const score = this.minimax(newStack, depth - 1, alpha, beta, false);
+                    const [left, right] = moves[i];
+                    const newHeap = [...stack.filter((_, index) => index !== i), left, right];
+                    const score = this.minimax(newHeap, depth - 1, alpha, beta, false);
                     bestScore = Math.max(bestScore, score);
                     alpha = Math.max(alpha, score);
                     if (beta <= alpha) {
@@ -144,12 +143,12 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
             } else {
                 let bestScore = Infinity;
                 for (let i = 0; i < moves.length; i++) {
-                    const [stack1, stack2] = moves[i];
-                    //Šajā koda daļā tiek izveidota jauna masīva newStack vērtība, kura ir veidota, izmantojot ES6 spread operatoru un filter metodi.
-                    // Šīs metodes izmantošanas rezultātā newStack saturēs visus elementus no sākotnējā stack masīva, izņemot elementu ar indeksu i.
-                    // Tajā vietā, kur atradās elements ar indeksu i, newStack saturēs divas citas vērtības - stack1 un stack2.
-                    const newStack = [...stack.filter((_, index) => index !== i), stack1, stack2]; //
-                    const score = this.minimax(newStack, depth - 1, alpha, beta, true);
+                    const [left, right] = moves[i];
+                    //Šajā koda daļā tiek izveidota jauna masīva newHeap vērtība, kura ir veidota, izmantojot ES6 spread operatoru un filter metodi.
+                    // Šīs metodes izmantošanas rezultātā newHeap saturēs visus elementus no sākotnējā stack masīva, izņemot elementu ar indeksu i.
+                    // Tajā vietā, kur atradās elements ar indeksu i, newHeap saturēs divas citas vērtības - stack1 un stack2.
+                    const newHeap = [...stack.filter((_, index) => index !== i), left, right]; //
+                    const score = this.minimax(newHeap, depth - 1, alpha, beta, true);
                     bestScore = Math.min(bestScore, score);
                     beta = Math.min(beta, score);
                     if (beta <= alpha) {
@@ -200,8 +199,8 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
             let bestMoves = [];
             for (let i = 0; i < moves.length; i++) {
                 const [stack1, stack2] = moves[i];
-                const newStack = [...this.stack.filter((_, index) => index !== i), stack1, stack2];
-                const score = this.minimax(newStack,3 , -Infinity, Infinity,false);
+                const newHeap = [...this.stack.filter((_, index) => index !== i), stack1, stack2];
+                const score = this.minimax(newHeap,3 , -Infinity, Infinity,false);
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = moves[i];
@@ -214,8 +213,8 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
         // Applies the given move to the game state
         applyMove(stackIndex, stackSize) {
             const currentStack = this.stack[stackIndex];
-            const newStackSizes = [stackSize, currentStack - stackSize];
-            this.stack.splice(stackIndex, 1, ...newStackSizes);
+            const newHeapSizes = [stackSize, currentStack - stackSize];
+            this.stack.splice(stackIndex, 1, ...newHeapSizes);
             let player = this.currentPlayer == 1 ? 'Lietotājs' : "Ai";
             let trace = {[player]: this.stack};
             this.stackTrace.push(trace); //logošana
