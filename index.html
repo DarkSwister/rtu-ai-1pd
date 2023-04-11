@@ -196,15 +196,15 @@ https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css
             }
             let bestScore = -Infinity;
             let bestMove = null;
-            let bestMoves = [];
+            // let bestMoves = []; vertīa priekš labāko gajenu logošanas
             for (let i = 0; i < moves.length; i++) {
-                const [stack1, stack2] = moves[i];
-                const newHeap = [...this.stack.filter((_, index) => index !== i), stack1, stack2];
+                const [left, right] = moves[i];
+                const newHeap = [...this.stack.filter((_, index) => index !== i), left, right];
                 const score = this.minimax(newHeap,3 , -Infinity, Infinity,false);
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = moves[i];
-                    bestMoves.push(bestMove,score);
+                    // bestMoves.push(bestMove,score); //
                 }
             }
             return bestMove;
